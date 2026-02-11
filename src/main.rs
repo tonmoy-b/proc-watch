@@ -44,3 +44,16 @@ async fn main() {
         println!("Sending Heartbeat: {}", json_payload);
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ... existing tests ...
+
+    #[test]
+    fn test_multiply() {
+        assert_eq!(6+6, 12);
+    }
+}
