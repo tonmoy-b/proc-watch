@@ -1,0 +1,32 @@
+[package]
+name = "infra-health-agent"
+version = "0.1.0"
+edition = "2024"
+authors = ["Tonmoy T. Bhattacharya"]
+description = "High-performance telemetry agent to check infra health for Azure MySQL Control Plane"
+
+[dependencies]
+# Async runtime - features added: marcos, tr-milti-threaded, time
+tokio = { version = "1.49", features = ["macros", "rt-multi-thread", "time"] }
+
+# System metrics - feature:'component' for close hardware monitoring
+# 'linux-net' for get networking metrics -- availabel by default now.
+sysinfo = { version = "0.38.0", features = ["component"] }
+
+# Serialization - feature:'derives' for JSON schema mapping
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Time handling for heartbeat timestamps
+chrono = { version = "0.4", features = ["serde"] }
+
+# Logging 
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[profile.release]
+opt-level = 'z'     # optimize for size-reduction 
+lto = true          # Link Time Optimization for better performance
+codegen-units = 1   # optimization for operation at  cost of build time
+panic = 'abort'     # remove stack unwinding to save space
+strip = true        

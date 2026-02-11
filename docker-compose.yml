@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile.dev
+    volumes:
+      - .:/workspace:cached
+      # needed by 'sysinfo' crate for reading host metrics
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    environment:
+      - HOST_PROC=/host/proc
+      - HOST_SYS=/host/sys
+  
+    privileged: true 
+    network_mode: "host"
+    command: /bin/sh -c "while sleep 1000; do :; done"
