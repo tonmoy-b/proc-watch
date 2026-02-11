@@ -2,36 +2,34 @@ name: Rust CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [ "main" ]
   pull_request:
-    branches: [main, master]
+    branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  test:
-    name: Test on ${{ matrix.os }} / ${{ matrix.rust }}
-    runs-on: ${{ matrix.os }}-latest
-    strategy:
-      matrix:
-        os: [ubuntu, windows, macos]
-        rust: [stable]          # you can add: nightly, beta, 1.75.0, etc.
+  build:
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Install Rust ${{ matrix.rust }}
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.rust }}
+    - name: Install Rust Toolchain
+      uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache cargo dependencies
-        uses: swatinem/rust-cache@v2
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2
 
-      - name: Build
-        run: cargo build --verbose --locked
+    - name: Check Formatting
+      run: cargo fmt --all -- --check
 
-      - name: Run tests
-        run: cargo test --verbose --locked
+    - name: Lint with Clippy
+      run: cargo clippy -- -D warnings
+
+    - name: Build
+      run: cargo build --verbose
+
+    - name: Run Tests
+      run: cargo test --verbose
