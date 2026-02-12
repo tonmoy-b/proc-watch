@@ -45,3 +45,6 @@ $RECYCLE.BIN/
 *.log
 perf.data
 perf.data.old
+
+# ignore backedup devcontainer
+.devcontainer.bak/

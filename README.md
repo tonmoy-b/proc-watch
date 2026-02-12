@@ -7,6 +7,5 @@ The Infrastructure Health Agent is a lightweight, high-performance system daemon
 
 -------------
 
-![Rust CI status](https://github.com)
-
 [![CI](https://github.com/tonmoy-b/proc-watch/actions/workflows/rust-ci.yml/badge.svg)]
+
