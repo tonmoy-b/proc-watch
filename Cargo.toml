@@ -1,16 +1,30 @@
 [package]
 name = "infra-health-agent"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 authors = ["Tonmoy T. Bhattacharya"]
 description = "High-performance telemetry agent to check infra health for Azure MySQL Control Plane"
 
+
+[[bin]]
+name = "infra-health-agent"
+path = "src/main.rs"
+
 [dependencies]
 # Async runtime - features added: marcos, tr-milti-threaded, time
-tokio = { version = "1.49", features = ["macros", "rt-multi-thread", "time"] }
+tokio = { version = "1.49", features = ["full"] }
+async-trait = "0.1"
+# # gRPC and Protobuf -- TODO: incorporate at a later sprint
+# tonic = "0.14.3"
+# prost = "0.14.3"
+# prost-types = "0.14.3"
+
+# Error handling
+thiserror = "2.0.18"
+anyhow = "1"
 
 # System metrics - feature:'component' for close hardware monitoring
-# 'linux-net' for get networking metrics -- availabel by default now.
+# 'linux-net' for get networking metrics -- available by default now.
 sysinfo = { version = "0.38.0", features = ["component"] }
 
 # Serialization - feature:'derives' for JSON schema mapping
@@ -20,9 +34,28 @@ serde_json = "1.0"
 # Time handling for heartbeat timestamps
 chrono = { version = "0.4", features = ["serde"] }
 
+# CLI
+clap = {version = "4", features = ["derive", "env"]}
+
 # Logging 
 tracing = "0.1"
-tracing-subscriber = "0.3"
+tracing-subscriber = {version="0.3", features = ["env-filter", "json"]}
+
+# linux system calls
+nix = { version = "0.28", features = ["signal", "process", "fs"] }
+
+# Hostname resolution
+hostname = "0.4"
+
+# for proto, TODO: incorporate at a later sprint
+# [build-dependencies]
+# tonic-build = "0.14.3"
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3"
+assert_cmd = "2"
+
 
 [profile.release]
 opt-level = 'z'     # optimize for size-reduction 
