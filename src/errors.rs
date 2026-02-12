@@ -23,4 +23,3 @@ pub enum CollectorError {
     #[error("collection timed out after {timeout_ms}ms")]
     Timeout { timeout_ms: u64 },
 }
-

@@ -25,7 +25,7 @@ anyhow = "1"
 
 # System metrics - feature:'component' for close hardware monitoring
 # 'linux-net' for get networking metrics -- available by default now.
-sysinfo = { version = "0.38.0", features = ["component"] }
+sysinfo = { version = "0.33.0", features = ["component"] }
 
 # Serialization - feature:'derives' for JSON schema mapping
 serde = { version = "1.0", features = ["derive"] }

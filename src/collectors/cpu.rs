@@ -24,8 +24,14 @@ struct CpuSample {
 
 impl CpuSample {
     fn total(&self) -> u64 {
-        self.user + self.nice + self.system + self.idle
-            + self.iowait + self.irq + self.softirq + self.steal
+        self.user
+            + self.nice
+            + self.system
+            + self.idle
+            + self.iowait
+            + self.irq
+            + self.softirq
+            + self.steal
     }
 }
 
@@ -46,11 +52,13 @@ impl CpuCollector {
         }
 
         let parse = |idx: usize, field: &str| -> Result<u64, CollectorError> {
-            parts[idx].parse::<u64>().map_err(|_| CollectorError::ParseError {
-                path: "/proc/stat".into(),
-                field: field.into(),
-                raw: parts[idx].to_string(),
-            })
+            parts[idx]
+                .parse::<u64>()
+                .map_err(|_| CollectorError::ParseError {
+                    path: "/proc/stat".into(),
+                    field: field.into(),
+                    raw: parts[idx].to_string(),
+                })
         };
 
         Ok(CpuSample {
@@ -77,11 +85,13 @@ impl CpuCollector {
         }
 
         let parse = |idx: usize, field: &str| -> Result<f64, CollectorError> {
-            parts[idx].parse::<f64>().map_err(|_| CollectorError::ParseError {
-                path: "/proc/loadavg".into(),
-                field: field.into(),
-                raw: parts[idx].to_string(),
-            })
+            parts[idx]
+                .parse::<f64>()
+                .map_err(|_| CollectorError::ParseError {
+                    path: "/proc/loadavg".into(),
+                    field: field.into(),
+                    raw: parts[idx].to_string(),
+                })
         };
 
         Ok((parse(0, "1m")?, parse(1, "5m")?, parse(2, "15m")?))
@@ -92,8 +102,7 @@ impl CpuCollector {
         stat_content
             .lines()
             .filter(|line| {
-                line.starts_with("cpu")
-                    && line.chars().nth(3).map_or(false, |c| c.is_ascii_digit())
+                line.starts_with("cpu") && line.chars().nth(3).map_or(false, |c| c.is_ascii_digit())
             })
             .count() as u32
     }
@@ -107,12 +116,13 @@ impl Collector for CpuCollector {
 
     async fn collect(&mut self) -> Result<CollectionResult, CollectorError> {
         // Read /proc/stat for CPU ticks
-        let stat_content = fs::read_to_string("/proc/stat")
-            .await
-            .map_err(|e| CollectorError::ProcReadError {
-                path: "/proc/stat".into(),
-                source: e,
-            })?;
+        let stat_content =
+            fs::read_to_string("/proc/stat")
+                .await
+                .map_err(|e| CollectorError::ProcReadError {
+                    path: "/proc/stat".into(),
+                    source: e,
+                })?;
 
         let cpu_line = stat_content
             .lines()
@@ -127,39 +137,41 @@ impl Collector for CpuCollector {
         let num_cores = Self::count_cores(&stat_content);
 
         // Read load averages
-        let loadavg_content = fs::read_to_string("/proc/loadavg")
-            .await
-            .map_err(|e| CollectorError::ProcReadError {
+        let loadavg_content = fs::read_to_string("/proc/loadavg").await.map_err(|e| {
+            CollectorError::ProcReadError {
                 path: "/proc/loadavg".into(),
                 source: e,
-            })?;
+            }
+        })?;
         let (load_1m, load_5m, load_15m) = Self::parse_loadavg(&loadavg_content)?;
 
         // Compute deltas if we have a previous sample
-        let (user_pct, system_pct, iowait_pct, idle_pct) =
-            if let Some(ref prev) = self.prev_sample {
-                let total_delta = current.total().saturating_sub(prev.total());
-                if total_delta == 0 {
-                    (0.0, 0.0, 0.0, 100.0)
-                } else {
-                    let td = total_delta as f64;
-                    (
-                        (current.user.saturating_sub(prev.user)
-                            + current.nice.saturating_sub(prev.nice)) as f64
-                            / td * 100.0,
-                        (current.system.saturating_sub(prev.system)
-                            + current.irq.saturating_sub(prev.irq)
-                            + current.softirq.saturating_sub(prev.softirq)) as f64
-                            / td * 100.0,
-                        current.iowait.saturating_sub(prev.iowait) as f64 / td * 100.0,
-                        current.idle.saturating_sub(prev.idle) as f64 / td * 100.0,
-                    )
-                }
+        let (user_pct, system_pct, iowait_pct, idle_pct) = if let Some(ref prev) = self.prev_sample
+        {
+            let total_delta = current.total().saturating_sub(prev.total());
+            if total_delta == 0 {
+                (0.0, 0.0, 0.0, 100.0)
             } else {
-                // First sample — can't compute delta yet.
-                // Return zeros; next collection will have real data.
-                (0.0, 0.0, 0.0, 0.0)
-            };
+                let td = total_delta as f64;
+                (
+                    (current.user.saturating_sub(prev.user)
+                        + current.nice.saturating_sub(prev.nice)) as f64
+                        / td
+                        * 100.0,
+                    (current.system.saturating_sub(prev.system)
+                        + current.irq.saturating_sub(prev.irq)
+                        + current.softirq.saturating_sub(prev.softirq)) as f64
+                        / td
+                        * 100.0,
+                    current.iowait.saturating_sub(prev.iowait) as f64 / td * 100.0,
+                    current.idle.saturating_sub(prev.idle) as f64 / td * 100.0,
+                )
+            }
+        } else {
+            // First sample — can't compute delta yet.
+            // Return zeros; next collection will have real data.
+            (0.0, 0.0, 0.0, 0.0)
+        };
 
         self.prev_sample = Some(current);
 
@@ -247,12 +259,24 @@ cpu1 1335498 35507 523368 13200746 4990 0 3670 0 0 0";
     #[test]
     fn test_delta_computation() {
         let prev = CpuSample {
-            user: 1000, nice: 0, system: 500, idle: 8000,
-            iowait: 100, irq: 0, softirq: 0, steal: 0,
+            user: 1000,
+            nice: 0,
+            system: 500,
+            idle: 8000,
+            iowait: 100,
+            irq: 0,
+            softirq: 0,
+            steal: 0,
         };
         let curr = CpuSample {
-            user: 1200, nice: 0, system: 600, idle: 8100,
-            iowait: 100, irq: 0, softirq: 0, steal: 0,
+            user: 1200,
+            nice: 0,
+            system: 600,
+            idle: 8100,
+            iowait: 100,
+            irq: 0,
+            softirq: 0,
+            steal: 0,
         };
         let total_delta = curr.total() - prev.total();
         assert_eq!(total_delta, 400);

@@ -37,13 +37,11 @@ pub struct Config {
 impl Config {
     /// get agent ID, upon failure fallback to hostname.
     pub fn resolved_agent_id(&self) -> String {
-        self.agent_id
-            .clone()
-            .unwrap_or_else(|| {
-                hostname::get()
-                    .map(|h| h.to_string_lossy().into_owned())
-                    .unwrap_or_else(|_| "unknown-agent".to_string())
-            })
+        self.agent_id.clone().unwrap_or_else(|| {
+            hostname::get()
+                .map(|h| h.to_string_lossy().into_owned())
+                .unwrap_or_else(|_| "unknown-agent".to_string())
+        })
     }
 
     pub fn collect_interval(&self) -> Duration {

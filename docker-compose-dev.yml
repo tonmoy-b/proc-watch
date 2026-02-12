@@ -1,0 +1,8 @@
+services:
+  dev:
+    image: rust:1.83-bookworm
+    privileged: true
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sleep infinity

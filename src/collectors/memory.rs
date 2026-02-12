@@ -1,6 +1,6 @@
 use super::*;
+use super::{CheckStatus, CollectionResult, Collector, MemorySnapshot, MetricPayload};
 use crate::errors::CollectorError;
-use super::{Collector, CollectionResult, CheckStatus, MetricPayload, MemorySnapshot};
 use async_trait::async_trait;
 use std::collections::HashMap;
 use tokio::fs;
@@ -29,10 +29,7 @@ impl MemoryCollector {
     }
 
     /// Extract a required field from meminfo, converting kB -> bytes.
-    fn get_bytes(
-        map: &HashMap<String, u64>,
-        field: &str,
-    ) -> Result<u64, CollectorError> {
+    fn get_bytes(map: &HashMap<String, u64>, field: &str) -> Result<u64, CollectorError> {
         map.get(field)
             .map(|kb| kb * 1024)
             .ok_or_else(|| CollectorError::ParseError {
@@ -50,12 +47,12 @@ impl Collector for MemoryCollector {
     }
 
     async fn collect(&mut self) -> Result<CollectionResult, CollectorError> {
-        let content = fs::read_to_string("/proc/meminfo")
-            .await
-            .map_err(|e| CollectorError::ProcReadError {
+        let content = fs::read_to_string("/proc/meminfo").await.map_err(|e| {
+            CollectorError::ProcReadError {
                 path: "/proc/meminfo".into(),
                 source: e,
-            })?;
+            }
+        })?;
 
         let map = Self::parse_meminfo(&content)?;
 
@@ -81,8 +78,7 @@ impl Collector for MemoryCollector {
             memory_pressure_pct: pressure_pct,
         };
 
-        let status = if pressure_pct > 95.0
-            || (swap_total > 0 && swap_used > swap_total * 80 / 100)
+        let status = if pressure_pct > 95.0 || (swap_total > 0 && swap_used > swap_total * 80 / 100)
         {
             CheckStatus::Unhealthy
         } else if pressure_pct > 80.0 {
